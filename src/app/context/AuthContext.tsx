@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
 
-interface AuthContextType { 
+export interface AuthContextType { 
     crendentials: string | null;
     login: (encodedCredentials: string) => void;
     logout: () => void;
