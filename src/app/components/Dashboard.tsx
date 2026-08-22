@@ -1,71 +1,87 @@
-import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
-import { Button } from "./ui/button";
-import { Badge } from "./ui/badge";
-import { 
-  Trophy,
-  TrendingUp,
-  TrendingDown,
-  Plus,
-  Download,
-  LogOut,
-  User,
-  Gamepad2,
-  BarChart3,
-  Calendar,
-  Target,
-  Play,
-  Upload
-} from "lucide-react";
+// src/app/components/Dashboard.tsx
+import { useState } from 'react';
 import {
+  Box,
+  Container,
+  Card,
+  CardContent,
+  Typography,
+  Button,
+  Chip,
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
-  TableHeader,
   TableRow,
-} from "./ui/table";
-import { AddMatchForm, MatchFormData } from "./AddMatchForm";
-import { Analytics } from "./Analytics";
-import { ImportStartGGModal, ImportedMatch } from "./ImportStartGGModal";
-import { GameViewer } from "./GameViewer";
-import { UploadSlpModal } from "./UploadSlpModal";
+  Paper,
+} from '@mui/material';
+import {
+  EmojiEvents as Trophy,
+  TrendingUp,
+  TrendingDown,
+  Add as Plus,
+  Download,
+  Logout as LogOut,
+  Person as User,
+  SportsEsports as Gamepad2,
+  BarChart as BarChart3,
+  CalendarMonth as Calendar,
+  GpsFixed as Target,
+  PlayArrow as Play,
+  Upload,
+} from '@mui/icons-material';
+import { useNavigate } from '@tanstack/react-router';
+import { useAuth } from '../hooks/useAuth';
+import { AddMatchForm, MatchFormData } from './AddMatchForm';
+import { Analytics } from './Analytics';
+import { ImportStartGGModal, ImportedMatch } from './ImportStartGGModal';
+import { GameViewer } from './GameViewer';
+import { UploadSlpModal } from './UploadSlpModal';
+import { useLogout } from '../hooks/useLogout';
 
-// Mock data for recent matches
 const recentMatches = [
-  { id: 1, date: "2026-03-30", opponent: "Mango", myCharacter: "Fox", opponentCharacter: "Falco", stage: "Battlefield", result: "Win", score: "3-2" },
-  { id: 2, date: "2026-03-30", opponent: "Zain", myCharacter: "Fox", opponentCharacter: "Marth", stage: "Final Destination", result: "Loss", score: "1-3" },
-  { id: 3, date: "2026-03-29", opponent: "iBDW", myCharacter: "Fox", opponentCharacter: "Fox", stage: "Yoshi's Story", result: "Win", score: "3-1" },
-  { id: 4, date: "2026-03-29", opponent: "Plup", myCharacter: "Falco", opponentCharacter: "Sheik", stage: "Pokemon Stadium", result: "Loss", score: "2-3" },
-  { id: 5, date: "2026-03-28", opponent: "Hungrybox", myCharacter: "Fox", opponentCharacter: "Jigglypuff", stage: "Dream Land", result: "Win", score: "3-0" },
+  { id: 1, date: '2026-03-30', opponent: 'Mango', myCharacter: 'Fox', opponentCharacter: 'Falco', stage: 'Battlefield', result: 'Win', score: '3-2' },
+  { id: 2, date: '2026-03-30', opponent: 'Zain', myCharacter: 'Fox', opponentCharacter: 'Marth', stage: 'Final Destination', result: 'Loss', score: '1-3' },
+  { id: 3, date: '2026-03-29', opponent: 'iBDW', myCharacter: 'Fox', opponentCharacter: 'Fox', stage: "Yoshi's Story", result: 'Win', score: '3-1' },
+  { id: 4, date: '2026-03-29', opponent: 'Plup', myCharacter: 'Falco', opponentCharacter: 'Sheik', stage: 'Pokemon Stadium', result: 'Loss', score: '2-3' },
+  { id: 5, date: '2026-03-28', opponent: 'Hungrybox', myCharacter: 'Fox', opponentCharacter: 'Jigglypuff', stage: 'Dream Land', result: 'Win', score: '3-0' },
 ];
 
-// Mock statistics
 const stats = {
   totalMatches: 127,
   wins: 78,
   losses: 49,
   winRate: 61.4,
   currentStreak: 2,
-  streakType: "win" as const,
-  favoriteCharacter: "Fox",
-  bestMatchup: "Jigglypuff (75%)",
-  worstMatchup: "Marth (45%)",
+  streakType: 'win' as const,
+  favoriteCharacter: 'Fox',
+  bestMatchup: 'Jigglypuff (75%)',
+  worstMatchup: 'Marth (45%)',
 };
 
-interface DashboardProps {
-  username?: string;
-  onLogout: () => void;
-}
+const cardSx = {
+  border: '1px solid #1e293b',
+  bgcolor: 'rgba(15, 23, 42, 0.9)',
+  backdropFilter: 'blur(8px)',
+};
 
-export function Dashboard({ username = "Player1", onLogout }: DashboardProps) {
+export function Dashboard() {
+  const logoutMutation = useLogout();
+  const navigate = useNavigate();
+
   const [showAddMatch, setShowAddMatch] = useState(false);
-  const [newMatch, setNewMatch] = useState<MatchFormData | null>(null);
+  const [, setNewMatch] = useState<MatchFormData | null>(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [showGameViewer, setShowGameViewer] = useState(false);
   const [showUploadSlp, setShowUploadSlp] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
-  const [importedMatches, setImportedMatches] = useState<ImportedMatch[]>([]);
+  const [, setImportedMatches] = useState<ImportedMatch[]>([]);
+
+  const handleLogout = () => {
+    logoutMutation.mutate();
+    navigate({ to: '/login' });
+  };
 
   if (showAnalytics) {
     return <Analytics onBack={() => setShowAnalytics(false)} />;
@@ -76,255 +92,223 @@ export function Dashboard({ username = "Player1", onLogout }: DashboardProps) {
   }
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-      {/* Animated Grid Pattern */}
-      <div className="fixed inset-0 z-0 opacity-5">
-        <div className="absolute inset-0" style={{
+    <Box sx={{ minHeight: '100vh', width: '100%', background: 'linear-gradient(to bottom right, #020617, #0f172a, #020617)', position: 'relative' }}>
+      {/* Grid pattern */}
+      <Box
+        sx={{
+          position: 'fixed',
+          inset: 0,
+          opacity: 0.05,
           backgroundImage: `linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
                             linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)`,
-          backgroundSize: '50px 50px'
-        }} />
-      </div>
+          backgroundSize: '50px 50px',
+        }}
+      />
 
       {/* Header */}
-      <header className="relative z-10 border-b border-slate-800 bg-slate-900/80 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <Gamepad2 className="w-8 h-8 text-red-500" />
-                <Trophy className="w-4 h-4 text-yellow-400 absolute -top-1 -right-1" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-white">Melee Tracker</h1>
-                <p className="text-xs text-slate-400">Performance Analytics</p>
-              </div>
-            </div>
+      <Box component="header" sx={{ position: 'relative', zIndex: 10, borderBottom: '1px solid #1e293b', bgcolor: 'rgba(15,23,42,0.8)', backdropFilter: 'blur(8px)' }}>
+        <Container maxWidth="lg" sx={{ py: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Box sx={{ position: 'relative' }}>
+                <Gamepad2 sx={{ width: 32, height: 32, color: '#ef4444' }} />
+                <Trophy sx={{ width: 16, height: 16, color: '#facc15', position: 'absolute', top: -4, right: -4 }} />
+              </Box>
+              <Box>
+                <Typography variant="h5" sx={{ color: 'white', fontWeight: 'bold', lineHeight: 1.2 }}>
+                  Melee Tracker
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+                  Performance Analytics
+                </Typography>
+              </Box>
+            </Box>
 
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 px-3 py-2 bg-slate-800 rounded-lg">
-                <User className="w-4 h-4 text-slate-400" />
-                <span className="text-white text-sm font-medium">{username}</span>
-              </div>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.5, py: 1, bgcolor: '#1e293b', borderRadius: 2 }}>
+                <User sx={{ width: 18, height: 18, color: '#94a3b8' }} />
+                <Typography variant="body2" sx={{ color: 'white', fontWeight: 500 }}>
+                  Player1
+                </Typography>
+              </Box>
               <Button
-                onClick={onLogout}
-                variant="ghost"
-                size="sm"
-                className="text-slate-400 hover:text-white hover:bg-slate-800"
+                onClick={handleLogout}
+                size="small"
+                startIcon={<LogOut sx={{ width: 16, height: 16 }} />}
+                sx={{ color: '#94a3b8', '&:hover': { color: 'white', bgcolor: '#1e293b' } }}
               >
-                <LogOut className="w-4 h-4 mr-2" />
                 Logout
               </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+            </Box>
+          </Box>
+        </Container>
+      </Box>
 
-      {/* Main Content */}
-      <main className="relative z-10 container mx-auto px-4 py-8">
-        {/* Quick Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Card className="border-slate-800 bg-slate-900/90 backdrop-blur-sm">
-            <CardHeader className="pb-3">
-              <CardDescription className="text-slate-400">Total Matches</CardDescription>
-              <CardTitle className="text-3xl text-white">{stats.totalMatches}</CardTitle>
-            </CardHeader>
+      {/* Main */}
+      <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 10, py: 4 }}>
+        {/* Quick stats */}
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr', lg: '1fr 1fr 1fr 1fr' }, gap: 2, mb: 4 }}>
+          <Card sx={cardSx}>
             <CardContent>
-              <div className="flex items-center gap-2 text-slate-400 text-sm">
-                <Calendar className="w-4 h-4" />
-                <span>All time</span>
-              </div>
+              <Typography variant="body2" sx={{ color: '#94a3b8' }}>Total Matches</Typography>
+              <Typography variant="h4" sx={{ color: 'white', mb: 1 }}>{stats.totalMatches}</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#94a3b8' }}>
+                <Calendar sx={{ width: 16, height: 16 }} />
+                <Typography variant="body2">All time</Typography>
+              </Box>
             </CardContent>
           </Card>
 
-          <Card className="border-slate-800 bg-slate-900/90 backdrop-blur-sm">
-            <CardHeader className="pb-3">
-              <CardDescription className="text-slate-400">Win Rate</CardDescription>
-              <CardTitle className="text-3xl text-white">{stats.winRate}%</CardTitle>
-            </CardHeader>
+          <Card sx={cardSx}>
             <CardContent>
-              <div className="flex items-center gap-2 text-green-400 text-sm">
-                <TrendingUp className="w-4 h-4" />
-                <span>{stats.wins}W - {stats.losses}L</span>
-              </div>
+              <Typography variant="body2" sx={{ color: '#94a3b8' }}>Win Rate</Typography>
+              <Typography variant="h4" sx={{ color: 'white', mb: 1 }}>{stats.winRate}%</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#4ade80' }}>
+                <TrendingUp sx={{ width: 16, height: 16 }} />
+                <Typography variant="body2">{stats.wins}W - {stats.losses}L</Typography>
+              </Box>
             </CardContent>
           </Card>
 
-          <Card className="border-slate-800 bg-slate-900/90 backdrop-blur-sm">
-            <CardHeader className="pb-3">
-              <CardDescription className="text-slate-400">Current Streak</CardDescription>
-              <CardTitle className="text-3xl text-white">
+          <Card sx={cardSx}>
+            <CardContent>
+              <Typography variant="body2" sx={{ color: '#94a3b8' }}>Current Streak</Typography>
+              <Typography variant="h4" sx={{ color: 'white', mb: 1 }}>
                 {stats.currentStreak}
-                <span className="text-lg ml-1">{stats.streakType === "win" ? "W" : "L"}</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className={`flex items-center gap-2 text-sm ${stats.streakType === "win" ? "text-green-400" : "text-red-400"}`}>
-                {stats.streakType === "win" ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
-                <span>{stats.streakType === "win" ? "On fire!" : "Keep grinding"}</span>
-              </div>
+                <Typography component="span" variant="h6" sx={{ ml: 0.5 }}>
+                  {stats.streakType === 'win' ? 'W' : 'L'}
+                </Typography>
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: stats.streakType === 'win' ? '#4ade80' : '#f87171' }}>
+                {stats.streakType === 'win' ? <TrendingUp sx={{ width: 16, height: 16 }} /> : <TrendingDown sx={{ width: 16, height: 16 }} />}
+                <Typography variant="body2">{stats.streakType === 'win' ? 'On fire!' : 'Keep grinding'}</Typography>
+              </Box>
             </CardContent>
           </Card>
 
-          <Card className="border-slate-800 bg-slate-900/90 backdrop-blur-sm">
-            <CardHeader className="pb-3">
-              <CardDescription className="text-slate-400">Main Character</CardDescription>
-              <CardTitle className="text-3xl text-white">{stats.favoriteCharacter}</CardTitle>
-            </CardHeader>
+          <Card sx={cardSx}>
             <CardContent>
-              <div className="flex items-center gap-2 text-slate-400 text-sm">
-                <Target className="w-4 h-4" />
-                <span>Most played</span>
-              </div>
+              <Typography variant="body2" sx={{ color: '#94a3b8' }}>Main Character</Typography>
+              <Typography variant="h4" sx={{ color: 'white', mb: 1 }}>{stats.favoriteCharacter}</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#94a3b8' }}>
+                <Target sx={{ width: 16, height: 16 }} />
+                <Typography variant="body2">Most played</Typography>
+              </Box>
             </CardContent>
           </Card>
-        </div>
+        </Box>
 
-        {/* Action Buttons */}
-        <div className="flex flex-wrap gap-4 mb-8">
-          <Button 
-            className="bg-red-600 hover:bg-red-700 text-white"
-            onClick={() => setShowAddMatch(true)}
-          >
-            <Plus className="w-4 h-4 mr-2" />
+        {/* Action buttons */}
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 4 }}>
+          <Button variant="contained" startIcon={<Plus />} onClick={() => setShowAddMatch(true)} sx={{ bgcolor: '#dc2626', '&:hover': { bgcolor: '#b91c1c' } }}>
             Add Match
           </Button>
-          <Button 
-            variant="outline" 
-            className="border-slate-700 bg-slate-800 text-white hover:bg-slate-700"
-            onClick={() => setShowImportModal(true)}
-          >
-            <Download className="w-4 h-4 mr-2" />
+          <Button variant="outlined" startIcon={<Download />} onClick={() => setShowImportModal(true)} sx={{ borderColor: '#334155', bgcolor: '#1e293b', color: 'white', '&:hover': { bgcolor: '#334155', borderColor: '#334155' } }}>
             Import from start.gg
           </Button>
-          <Button
-            variant="outline"
-            className="border-slate-700 bg-slate-800 text-white hover:bg-slate-700"
-            onClick={() => setShowAnalytics(true)}
-          >
-            <BarChart3 className="w-4 h-4 mr-2" />
+          <Button variant="outlined" startIcon={<BarChart3 />} onClick={() => setShowAnalytics(true)} sx={{ borderColor: '#334155', bgcolor: '#1e293b', color: 'white', '&:hover': { bgcolor: '#334155', borderColor: '#334155' } }}>
             View Analytics
           </Button>
-          <Button
-            variant="outline"
-            className="border-slate-700 bg-slate-800 text-white hover:bg-slate-700"
-            onClick={() => setShowGameViewer(true)}
-          >
-            <Play className="w-4 h-4 mr-2" />
+          <Button variant="outlined" startIcon={<Play />} onClick={() => setShowGameViewer(true)} sx={{ borderColor: '#334155', bgcolor: '#1e293b', color: 'white', '&:hover': { bgcolor: '#334155', borderColor: '#334155' } }}>
             Watch Match
           </Button>
-          <Button
-            className="bg-red-600 hover:bg-red-700 text-white"
-            onClick={() => setShowUploadSlp(true)}
-          >
-            <Upload className="w-4 h-4 mr-2" />
+          <Button variant="contained" startIcon={<Upload />} onClick={() => setShowUploadSlp(true)} sx={{ bgcolor: '#dc2626', '&:hover': { bgcolor: '#b91c1c' } }}>
             Upload VOD
           </Button>
-        </div>
+        </Box>
 
-        {/* Matchup Stats */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <Card className="border-slate-800 bg-slate-900/90 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-green-500" />
-                Best Matchup
-              </CardTitle>
-              <CardDescription className="text-slate-400">
-                Your strongest opponent character
-              </CardDescription>
-            </CardHeader>
+        {/* Matchup stats */}
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: 3, mb: 4 }}>
+          <Card sx={cardSx}>
             <CardContent>
-              <div className="text-2xl font-bold text-white mb-2">vs {stats.bestMatchup.split(" ")[0]}</div>
-              <div className="text-green-400 text-lg">{stats.bestMatchup.split(" ")[1]}</div>
-              <p className="text-slate-400 text-sm mt-2">Keep capitalizing on this advantage</p>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                <TrendingUp sx={{ width: 20, height: 20, color: '#22c55e' }} />
+                <Typography variant="h6" sx={{ color: 'white' }}>Best Matchup</Typography>
+              </Box>
+              <Typography variant="body2" sx={{ color: '#94a3b8', mb: 2 }}>Your strongest opponent character</Typography>
+              <Typography variant="h5" sx={{ color: 'white', fontWeight: 'bold' }}>vs {stats.bestMatchup.split(' ')[0]}</Typography>
+              <Typography variant="h6" sx={{ color: '#4ade80' }}>{stats.bestMatchup.split(' ')[1]}</Typography>
+              <Typography variant="body2" sx={{ color: '#94a3b8', mt: 1 }}>Keep capitalizing on this advantage</Typography>
             </CardContent>
           </Card>
 
-          <Card className="border-slate-800 bg-slate-900/90 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <TrendingDown className="w-5 h-5 text-red-500" />
-                Needs Work
-              </CardTitle>
-              <CardDescription className="text-slate-400">
-                Focus area for improvement
-              </CardDescription>
-            </CardHeader>
+          <Card sx={cardSx}>
             <CardContent>
-              <div className="text-2xl font-bold text-white mb-2">vs {stats.worstMatchup.split(" ")[0]}</div>
-              <div className="text-red-400 text-lg">{stats.worstMatchup.split(" ")[1]}</div>
-              <p className="text-slate-400 text-sm mt-2">Practice this matchup to improve</p>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                <TrendingDown sx={{ width: 20, height: 20, color: '#ef4444' }} />
+                <Typography variant="h6" sx={{ color: 'white' }}>Needs Work</Typography>
+              </Box>
+              <Typography variant="body2" sx={{ color: '#94a3b8', mb: 2 }}>Focus area for improvement</Typography>
+              <Typography variant="h5" sx={{ color: 'white', fontWeight: 'bold' }}>vs {stats.worstMatchup.split(' ')[0]}</Typography>
+              <Typography variant="h6" sx={{ color: '#f87171' }}>{stats.worstMatchup.split(' ')[1]}</Typography>
+              <Typography variant="body2" sx={{ color: '#94a3b8', mt: 1 }}>Practice this matchup to improve</Typography>
             </CardContent>
           </Card>
-        </div>
+        </Box>
 
-        {/* Recent Matches Table */}
-        <Card className="border-slate-800 bg-slate-900/90 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="text-white">Recent Matches</CardTitle>
-            <CardDescription className="text-slate-400">
-              Your last 5 recorded matches
-            </CardDescription>
-          </CardHeader>
+        {/* Recent matches table */}
+        <Card sx={cardSx}>
           <CardContent>
-            <div className="rounded-md border border-slate-800">
+            <Typography variant="h6" sx={{ color: 'white' }}>Recent Matches</Typography>
+            <Typography variant="body2" sx={{ color: '#94a3b8', mb: 2 }}>Your last 5 recorded matches</Typography>
+
+            <TableContainer component={Paper} sx={{ bgcolor: 'transparent', border: '1px solid #1e293b', boxShadow: 'none' }}>
               <Table>
-                <TableHeader>
-                  <TableRow className="border-slate-800 hover:bg-slate-800/50">
-                    <TableHead className="text-slate-300">Date</TableHead>
-                    <TableHead className="text-slate-300">Opponent</TableHead>
-                    <TableHead className="text-slate-300">Matchup</TableHead>
-                    <TableHead className="text-slate-300">Stage</TableHead>
-                    <TableHead className="text-slate-300">Score</TableHead>
-                    <TableHead className="text-slate-300">Result</TableHead>
+                <TableHead>
+                  <TableRow sx={{ '& .MuiTableCell-root': { borderColor: '#1e293b', color: '#cbd5e1' } }}>
+                    <TableCell>Date</TableCell>
+                    <TableCell>Opponent</TableCell>
+                    <TableCell>Matchup</TableCell>
+                    <TableCell>Stage</TableCell>
+                    <TableCell>Score</TableCell>
+                    <TableCell>Result</TableCell>
                   </TableRow>
-                </TableHeader>
+                </TableHead>
                 <TableBody>
                   {recentMatches.map((match) => (
-                    <TableRow 
-                      key={match.id} 
-                      className="border-slate-800 hover:bg-slate-800/50 cursor-pointer"
+                    <TableRow
+                      key={match.id}
+                      sx={{
+                        cursor: 'pointer',
+                        '& .MuiTableCell-root': { borderColor: '#1e293b' },
+                        '&:hover': { bgcolor: 'rgba(30,41,59,0.5)' },
+                      }}
                     >
-                      <TableCell className="text-slate-400">
+                      <TableCell sx={{ color: '#94a3b8' }}>
                         {new Date(match.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                       </TableCell>
-                      <TableCell className="text-white font-medium">{match.opponent}</TableCell>
-                      <TableCell className="text-slate-300">
-                        <span className="text-blue-400">{match.myCharacter}</span> vs{" "}
-                        <span className="text-purple-400">{match.opponentCharacter}</span>
+                      <TableCell sx={{ color: 'white', fontWeight: 500 }}>{match.opponent}</TableCell>
+                      <TableCell sx={{ color: '#cbd5e1' }}>
+                        <Box component="span" sx={{ color: '#60a5fa' }}>{match.myCharacter}</Box> vs{' '}
+                        <Box component="span" sx={{ color: '#c084fc' }}>{match.opponentCharacter}</Box>
                       </TableCell>
-                      <TableCell className="text-slate-400">{match.stage}</TableCell>
-                      <TableCell className="text-slate-300">{match.score}</TableCell>
+                      <TableCell sx={{ color: '#94a3b8' }}>{match.stage}</TableCell>
+                      <TableCell sx={{ color: '#cbd5e1' }}>{match.score}</TableCell>
                       <TableCell>
-                        <Badge 
-                          variant={match.result === "Win" ? "default" : "destructive"}
-                          className={match.result === "Win" 
-                            ? "bg-green-900 text-green-200 hover:bg-green-800" 
-                            : "bg-red-900 text-red-200 hover:bg-red-800"
-                          }
-                        >
-                          {match.result}
-                        </Badge>
+                        <Chip
+                          label={match.result}
+                          size="small"
+                          sx={{
+                            bgcolor: match.result === 'Win' ? '#14532d' : '#7f1d1d',
+                            color: match.result === 'Win' ? '#bbf7d0' : '#fecaca',
+                          }}
+                        />
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
-            </div>
-            <div className="mt-4 text-center">
-              <Button 
-                variant="ghost" 
-                className="text-red-400 hover:text-red-300 hover:bg-slate-800"
-              >
+            </TableContainer>
+
+            <Box sx={{ mt: 2, textAlign: 'center' }}>
+              <Button sx={{ color: '#f87171', '&:hover': { color: '#fca5a5', bgcolor: '#1e293b' } }}>
                 View All Matches →
               </Button>
-            </div>
+            </Box>
           </CardContent>
         </Card>
-      </main>
+      </Container>
 
-      {/* Add Match Form */}
       <AddMatchForm
         open={showAddMatch}
         onClose={() => setShowAddMatch(false)}
@@ -334,7 +318,6 @@ export function Dashboard({ username = "Player1", onLogout }: DashboardProps) {
         }}
       />
 
-      {/* Import StartGG Modal */}
       <ImportStartGGModal
         open={showImportModal}
         onClose={() => setShowImportModal(false)}
@@ -344,11 +327,7 @@ export function Dashboard({ username = "Player1", onLogout }: DashboardProps) {
         }}
       />
 
-      {/* Upload SLP Modal */}
-      <UploadSlpModal
-        open={showUploadSlp}
-        onClose={() => setShowUploadSlp(false)}
-      />
-    </div>
+      <UploadSlpModal open={showUploadSlp} onClose={() => setShowUploadSlp(false)} />
+    </Box>
   );
 }

@@ -1,27 +1,26 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
+import { useCurrentUser } from '../hooks/useCurrentUser';
+import { useQueryClient } from '@tanstack/react-query';
 
 export interface AuthContextType { 
-    crendentials: string | null;
-    login: (encodedCredentials: string) => void;
-    logout: () => void;
     isAuthenticated: boolean;
+    isLoading: boolean;
+    
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-    const [crendentials, setCredentials] = useState<string | null>(null);
+    const { data: currentUser, isLoading } = useCurrentUser();
+  
     
-    const login = (encodedCredentials: string) => {
-        setCredentials(encodedCredentials);
-    };
-
-    const logout = () => {
-        setCredentials(null);
-    }
 
     return (
-        <AuthContext.Provider value={{ crendentials, login, logout, isAuthenticated: crendentials != null }}>
+        <AuthContext.Provider 
+        value={{
+            isAuthenticated: currentUser !== null && currentUser !== undefined,
+            isLoading
+        }}>
             {children}
         </AuthContext.Provider>
     );

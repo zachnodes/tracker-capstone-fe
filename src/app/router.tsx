@@ -1,15 +1,16 @@
 import { createRouter } from "@tanstack/react-router";
 import { routeTree }  from './routeTree.gen';
 import type { AuthContextType } from "./context/AuthContext";
+import { QueryClient } from "@tanstack/react-query";
 
 export interface RouterContext {
-  auth: AuthContextType;   
+  queryClient: QueryClient;   
 }
 
 export const router = createRouter({
     routeTree,
     context: {
-        auth: undefined!, // Supplied at render time in App.tsx
+        queryClient: undefined!, // Supplied at render time in App.tsx
     } as RouterContext,
 });
 
