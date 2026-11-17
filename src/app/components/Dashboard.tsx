@@ -39,14 +39,8 @@ import { ImportStartGGModal, ImportedMatch } from './ImportStartGGModal';
 import { GameViewer } from './GameViewer';
 import { UploadSlpModal } from './UploadSlpModal';
 import { useLogout } from '../hooks/useLogout';
-
-const recentMatches = [
-  { id: 1, date: '2026-03-30', opponent: 'Mango', myCharacter: 'Fox', opponentCharacter: 'Falco', stage: 'Battlefield', result: 'Win', score: '3-2' },
-  { id: 2, date: '2026-03-30', opponent: 'Zain', myCharacter: 'Fox', opponentCharacter: 'Marth', stage: 'Final Destination', result: 'Loss', score: '1-3' },
-  { id: 3, date: '2026-03-29', opponent: 'iBDW', myCharacter: 'Fox', opponentCharacter: 'Fox', stage: "Yoshi's Story", result: 'Win', score: '3-1' },
-  { id: 4, date: '2026-03-29', opponent: 'Plup', myCharacter: 'Falco', opponentCharacter: 'Sheik', stage: 'Pokemon Stadium', result: 'Loss', score: '2-3' },
-  { id: 5, date: '2026-03-28', opponent: 'Hungrybox', myCharacter: 'Fox', opponentCharacter: 'Jigglypuff', stage: 'Dream Land', result: 'Win', score: '3-0' },
-];
+import { SetRecord, isWin, winPct, MatchSource } from '../types/sets';
+import { useSets } from '../hooks/useSets';
 
 const stats = {
   totalMatches: 127,
@@ -66,10 +60,40 @@ const cardSx = {
   backdropFilter: 'blur(8px)',
 };
 
+function getStreak(sorted: SetRecord[]) {
+  if (sorted.length === 0) {
+    return 0;
+  }
+  let count = 0;
+  for (const match of sorted) {
+    if (match.result !== sorted[0].result) {
+      break;
+    }
+    count++;
+  }
+  return count;
+}
+
+function newestFirst(a: SetRecord, b: SetRecord) {
+  return b.playedAt.localeCompare(a.playedAt);
+}
+
 export function Dashboard() {
+  
   const logoutMutation = useLogout();
   const navigate = useNavigate();
 
+  const { data: sets } = useSets();
+  const matches: SetRecord[] = sets ?? [];
+  const sortedMatches = [...matches].sort(newestFirst);
+  const totalSets = matches.length;
+  const wins = matches.filter(isWin).length;
+  const losses = totalSets - wins;
+  const winRate = winPct(totalSets, wins);
+  const recentMatches = sortedMatches.slice(0, 5);
+
+  const currentStreak = getStreak(sortedMatches);
+  const streakIsWin = sortedMatches.length > 0 && sortedMatches[0].result === 'Win';
   const [showAddMatch, setShowAddMatch] = useState(false);
   const [, setNewMatch] = useState<MatchFormData | null>(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
@@ -81,6 +105,10 @@ export function Dashboard() {
   const handleLogout = () => {
     logoutMutation.mutate();
     navigate({ to: '/login' });
+  };
+
+  function handleViewMatches() {
+    navigate({ to: '/matches' });
   };
 
   if (showAnalytics) {
@@ -125,6 +153,13 @@ export function Dashboard() {
             </Box>
 
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Button
+                onClick={handleViewMatches}
+                className="hidden text-slate-300 hover:bg-slate-800 hover:text-red-400 md:flex"
+              >
+                
+                Matches
+              </Button>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.5, py: 1, bgcolor: '#1e293b', borderRadius: 2 }}>
                 <User sx={{ width: 18, height: 18, color: '#94a3b8' }} />
                 <Typography variant="body2" sx={{ color: 'white', fontWeight: 500 }}>
@@ -151,7 +186,7 @@ export function Dashboard() {
           <Card sx={cardSx}>
             <CardContent>
               <Typography variant="body2" sx={{ color: '#94a3b8' }}>Total Matches</Typography>
-              <Typography variant="h4" sx={{ color: 'white', mb: 1 }}>{stats.totalMatches}</Typography>
+              <Typography variant="h4" sx={{ color: 'white', mb: 1 }}>{totalSets}</Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#94a3b8' }}>
                 <Calendar sx={{ width: 16, height: 16 }} />
                 <Typography variant="body2">All time</Typography>
@@ -162,10 +197,10 @@ export function Dashboard() {
           <Card sx={cardSx}>
             <CardContent>
               <Typography variant="body2" sx={{ color: '#94a3b8' }}>Win Rate</Typography>
-              <Typography variant="h4" sx={{ color: 'white', mb: 1 }}>{stats.winRate}%</Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#4ade80' }}>
+              <Typography variant="h4" sx={{ color: 'white', mb: 1 }}>{winRate}%</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#94a3b8' }}>
                 <TrendingUp sx={{ width: 16, height: 16 }} />
-                <Typography variant="body2">{stats.wins}W - {stats.losses}L</Typography>
+                <Typography variant="body2">{wins} Wins - {losses} Losses</Typography>
               </Box>
             </CardContent>
           </Card>
@@ -174,14 +209,14 @@ export function Dashboard() {
             <CardContent>
               <Typography variant="body2" sx={{ color: '#94a3b8' }}>Current Streak</Typography>
               <Typography variant="h4" sx={{ color: 'white', mb: 1 }}>
-                {stats.currentStreak}
+                {currentStreak}
                 <Typography component="span" variant="h6" sx={{ ml: 0.5 }}>
-                  {stats.streakType === 'win' ? 'W' : 'L'}
+                  {streakIsWin ? 'W' : 'L'}
                 </Typography>
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: stats.streakType === 'win' ? '#4ade80' : '#f87171' }}>
-                {stats.streakType === 'win' ? <TrendingUp sx={{ width: 16, height: 16 }} /> : <TrendingDown sx={{ width: 16, height: 16 }} />}
-                <Typography variant="body2">{stats.streakType === 'win' ? 'On fire!' : 'Keep grinding'}</Typography>
+                {streakIsWin ? <TrendingUp sx={{ width: 16, height: 16 }} /> : <TrendingDown sx={{ width: 16, height: 16 }} />}
+                <Typography variant="body2">{streakIsWin ? 'On fire!' : 'Keep grinding'}</Typography>
               </Box>
             </CardContent>
           </Card>
@@ -258,8 +293,6 @@ export function Dashboard() {
                   <TableRow sx={{ '& .MuiTableCell-root': { borderColor: '#1e293b', color: '#cbd5e1' } }}>
                     <TableCell>Date</TableCell>
                     <TableCell>Opponent</TableCell>
-                    <TableCell>Matchup</TableCell>
-                    <TableCell>Stage</TableCell>
                     <TableCell>Score</TableCell>
                     <TableCell>Result</TableCell>
                   </TableRow>
@@ -275,15 +308,15 @@ export function Dashboard() {
                       }}
                     >
                       <TableCell sx={{ color: '#94a3b8' }}>
-                        {new Date(match.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        {new Date(match.playedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                       </TableCell>
-                      <TableCell sx={{ color: 'white', fontWeight: 500 }}>{match.opponent}</TableCell>
-                      <TableCell sx={{ color: '#cbd5e1' }}>
+                      <TableCell sx={{ color: 'white', fontWeight: 500 }}>{match.opponentTag}</TableCell>
+                      {/* <TableCell sx={{ color: '#cbd5e1' }}>
                         <Box component="span" sx={{ color: '#60a5fa' }}>{match.myCharacter}</Box> vs{' '}
                         <Box component="span" sx={{ color: '#c084fc' }}>{match.opponentCharacter}</Box>
-                      </TableCell>
-                      <TableCell sx={{ color: '#94a3b8' }}>{match.stage}</TableCell>
-                      <TableCell sx={{ color: '#cbd5e1' }}>{match.score}</TableCell>
+                      </TableCell> */}
+                      {/* <TableCell sx={{ color: '#94a3b8' }}>{match.stage}</TableCell> */}
+                      <TableCell sx={{ color: '#cbd5e1' }}>{match.scoreUser} - {match.scoreOpponent}</TableCell>
                       <TableCell>
                         <Chip
                           label={match.result}
@@ -301,7 +334,7 @@ export function Dashboard() {
             </TableContainer>
 
             <Box sx={{ mt: 2, textAlign: 'center' }}>
-              <Button sx={{ color: '#f87171', '&:hover': { color: '#fca5a5', bgcolor: '#1e293b' } }}>
+              <Button onClick={handleViewMatches} sx={{ color: '#f87171', '&:hover': { color: '#fca5a5', bgcolor: '#1e293b' } }}>
                 View All Matches →
               </Button>
             </Box>
